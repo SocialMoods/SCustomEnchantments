@@ -135,29 +135,6 @@ public class NBTUtils {
         return item;
     }
 
-    public static Item clearAllCustomEnchantments(Item item) {
-        if (item == null || !item.hasCompoundTag()) {
-            return item;
-        }
-
-        CompoundTag tag = item.getNamedTag();
-        tag.remove(CUSTOM_ENCHANTS_TAG);
-
-        if (tag.contains(LORE_TAG)) {
-            CompoundTag display = tag.getCompound(LORE_TAG);
-            display.remove(LORE_LIST_TAG);
-            tag.putCompound(LORE_TAG, display);
-        }
-
-        if (tag.isEmpty()) {
-            item.setNamedTag(null);
-        } else {
-            item.setNamedTag(tag);
-        }
-
-        return item;
-    }
-
     public static int hasCustomEnchantment(Item item, String enchantmentId) {
         if (item == null || enchantmentId == null || !item.hasCompoundTag()) {
             return 0;
@@ -186,22 +163,5 @@ public class NBTUtils {
         }
 
         return result;
-    }
-
-    public static String convertNbtToJson(byte[] nbtData) {
-        if (nbtData == null || nbtData.length == 0) {
-            return "{}";
-        }
-
-        try {
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(nbtData);
-            CompoundTag tag = NBTIO.read(inputStream, ByteOrder.LITTLE_ENDIAN, true);
-
-            return tag.toString();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "{\"error\":\"Failed to parse NBT data\"}";
-        }
     }
 }
