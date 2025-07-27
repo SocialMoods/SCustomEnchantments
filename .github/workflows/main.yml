@@ -32,14 +32,14 @@ jobs:
           COMMIT_URL="https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
           DESCRIPTION="**Последняя версия SCustomEnchantments**, собранная с последнего исходного кода.  
           
-          **Коммит:** <$COMMIT_URL>
+          **Коммит:** [${{ github.sha }}]($COMMIT_URL)
           
           > [!ВНИМАНИЕ]
           > Эта версия нестабильна. Отправляйте все баги в [Issues](https://github.com/${{ github.repository }}/issues).
           
           ### Как обновиться:
-          1. Скачайте `SCustomEnchantments-*.jar` из списка ниже.
-          2. Замените текущий файл `.jar` в директории сервера.
+          1. Скачайте \`SCustomEnchantments-1.0-SNAPSHOT.jar\` из списка ниже.
+          2. Замените текущий файл \`.jar\` в директории сервера.
           3. Перезапустите сервер.
           4. Наслаждайтесь обновлением! 🎉  
 
@@ -49,22 +49,30 @@ jobs:
           echo "$DESCRIPTION" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-      - name: Find built JAR
-        id: find_jar
+      - name: Verify JAR exists
+        id: verify_jar
         run: |
-          JAR_PATH=$(find ./build/libs -name "*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
-          echo "JAR_PATH=$JAR_PATH" >> $GITHUB_OUTPUT
-          echo "JAR_NAME=$(basename $JAR_PATH)" >> $GITHUB_OUTPUT
+          JAR_PATH="build/libs/SCustomEnchantments-1.0-SNAPSHOT.jar"
+          if [ -f "$JAR_PATH" ]; then
+            echo "JAR_PATH=$JAR_PATH" >> $GITHUB_OUTPUT
+            echo "JAR_NAME=SCustomEnchantments-1.0-SNAPSHOT.jar" >> $GITHUB_OUTPUT
+            echo "JAR_EXISTS=true" >> $GITHUB_OUTPUT
+          else
+            echo "JAR_EXISTS=false" >> $GITHUB_OUTPUT
+            echo "JAR files not found!" >&2
+            ls -la build/libs/ >&2
+            exit 1
+          fi
 
       - name: Release latest build
+        if: steps.verify_jar.outputs.JAR_EXISTS == 'true' && github.repository == 'SocialMoods/SCustomEnchantments'
         uses: Xotl/cool-github-releases@v1.1.9
-        if: success() && github.repository == 'SocialMoods/SCustomEnchantments'
         with:
           mode: update
           isPrerelease: true
           tag_name: snapshot
           release_name: "Latest Snapshot"
           body_mrkdwn: ${{ env.RELEASE_DESC }}
-          assets: ${{ steps.find_jar.outputs.JAR_PATH }}|application/java-archive
+          assets: ${{ steps.verify_jar.outputs.JAR_PATH }}|application/java-archive
           replace_assets: true
           github_token: ${{ secrets.GH_TOKEN }}
