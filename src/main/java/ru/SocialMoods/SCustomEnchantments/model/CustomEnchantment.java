@@ -27,7 +27,6 @@ public class CustomEnchantment {
      */
     protected String displayName;
 
-    protected Enchantment.Rarity rarity;
 
     /**
      * Проверяет, доступно ли данное зачарование для указанного предмета.
@@ -76,15 +75,6 @@ public class CustomEnchantment {
      */
     public float getEnchantChance() {
         return 0.15f;
-    }
-
-    /**
-     * Возвращает минимальный уровень стола зачарования, необходимый для получения этого зачарования.
-     *
-     * @return Минимальный уровень стола (1-3)
-     */
-    public int getMinEnchantLevel() {
-        return 1;
     }
 
     /**
