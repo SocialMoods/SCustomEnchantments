@@ -1,0 +1,67 @@
+name: Build and Release JAR on Push
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: gradle
+
+      - name: Build with Gradle
+        run: ./gradlew clean build
+
+      - name: Generate release description
+        id: generate_release_desc
+        run: |
+          COMMIT_URL="https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+          DESCRIPTION="**Последняя версия SCustomEnchantments**, собранная с последнего исходного кода.  
+          
+          **Коммит:** <$COMMIT_URL>
+          
+          > [!ВНИМАНИЕ]
+          > Эта версия нестабильна. Отправляйте все баги в [Issues](https://github.com/${{ github.repository }}/issues).
+          
+          ### Как обновиться:
+          1. Скачайте `SCustomEnchantments-*.jar` из списка ниже.
+          2. Замените текущий файл `.jar` в директории сервера.
+          3. Перезапустите сервер.
+          4. Наслаждайтесь обновлением! 🎉  
+
+          Если у вас есть вопросы или баги, пишите в [Issues](https://github.com/${{ github.repository }}/issues)."
+
+          echo "RELEASE_DESC<<EOF" >> $GITHUB_ENV
+          echo "$DESCRIPTION" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Find built JAR
+        id: find_jar
+        run: |
+          JAR_PATH=$(find ./build/libs -name "*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
+          echo "JAR_PATH=$JAR_PATH" >> $GITHUB_OUTPUT
+          echo "JAR_NAME=$(basename $JAR_PATH)" >> $GITHUB_OUTPUT
+
+      - name: Release latest build
+        uses: Xotl/cool-github-releases@v1.1.9
+        if: success() && github.repository == 'SocialMoods/SCustomEnchantments'
+        with:
+          mode: update
+          isPrerelease: true
+          tag_name: snapshot
+          release_name: "Latest Snapshot"
+          body_mrkdwn: ${{ env.RELEASE_DESC }}
+          assets: ${{ steps.find_jar.outputs.JAR_PATH }}|application/java-archive
+          replace_assets: true
+          github_token: ${{ secrets.GH_TOKEN }}
