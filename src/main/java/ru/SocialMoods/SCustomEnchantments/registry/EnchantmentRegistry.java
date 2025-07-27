@@ -1,9 +1,11 @@
 package ru.SocialMoods.SCustomEnchantments.registry;
 
+import cn.nukkit.Server;
 import cn.nukkit.item.Item;
+import ru.SocialMoods.SCustomEnchantments.Main;
 import ru.SocialMoods.SCustomEnchantments.model.CustomEnchantment;
 import ru.SocialMoods.SCustomEnchantments.utils.NBTUtils;
-import ru.SocialMoods.SCustomEnchantments.utils.Utils;
+import ru.SocialMoods.SCustomEnchantments.utils.BookUtils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +28,8 @@ public final class EnchantmentRegistry {
             throw new IllegalArgumentException("Enchantment already registered: " + enchantment.getId());
         }
         if (registerBook) {
-            Utils.registerEnchantedBooks(enchantment);
+            Main.getInstance().getLogger().warning("Deprecated usage (custom book register may cause core errors)");
+            BookUtils.registerEnchantedBooks(enchantment);
         }
         enchantments.put(enchantment.getId(), enchantment);
     }
