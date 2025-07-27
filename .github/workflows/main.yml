@@ -1,0 +1,83 @@
+name: Build and Release JAR on Push
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: gradle
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew clean build
+
+      - name: Generate release description
+        id: generate_release_desc
+        run: |
+          COMMIT_URL="https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+          DESCRIPTION="**Последняя версия SCustomEnchantments**, собранная с последнего исходного кода.  
+          
+          **Коммит:** [${{ github.sha }}]($COMMIT_URL)
+          
+          > [!ВНИМАНИЕ]
+          > Эта версия нестабильна. Отправляйте все баги в [Issues](https://github.com/${{ github.repository }}/issues).
+          
+          ### Как обновиться:
+          1. Скачайте \`SCustomEnchantments-1.0-SNAPSHOT.jar\` из списка ниже.
+          2. Замените текущий файл \`.jar\` в директории сервера.
+          3. Перезапустите сервер.
+          4. Наслаждайтесь обновлением! 🎉  
+
+          Если у вас есть вопросы или баги, пишите в [Issues](https://github.com/${{ github.repository }}/issues)."
+
+          echo "RELEASE_DESC<<EOF" >> $GITHUB_ENV
+          echo "$DESCRIPTION" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Verify JAR exists
+        id: verify_jar
+        run: |
+          JAR_PATH="build/libs/SCustomEnchantments-1.0-SNAPSHOT.jar"
+          if [ -f "$JAR_PATH" ]; then
+            echo "JAR_PATH=$JAR_PATH" >> $GITHUB_OUTPUT
+            echo "JAR_NAME=SCustomEnchantments-1.0-SNAPSHOT.jar" >> $GITHUB_OUTPUT
+            echo "JAR_EXISTS=true" >> $GITHUB_OUTPUT
+          else
+            echo "JAR_EXISTS=false" >> $GITHUB_OUTPUT
+            echo "JAR files not found!" >&2
+            ls -la build/libs/ >&2
+            exit 1
+          fi
+
+      - name: Release latest build
+        if: steps.verify_jar.outputs.JAR_EXISTS == 'true' && github.repository == 'SocialMoods/SCustomEnchantments'
+        uses: Xotl/cool-github-releases@v1.1.9
+        with:
+          mode: update
+          isPrerelease: true
+          tag_name: snapshot
+          release_name: "Latest Snapshot"
+          body_mrkdwn: ${{ env.RELEASE_DESC }}
+          assets: ${{ steps.verify_jar.outputs.JAR_PATH }}|application/java-archive
+          replace_assets: true
+          github_token: ${{ env.GITHUB_TOKEN }}
