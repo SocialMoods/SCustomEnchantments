@@ -11,9 +11,8 @@ public class MyEnchantment extends CustomEnchantment {
     // Обязательные поля
     protected String id;          // Уникальный ID (lower_case)
     protected String displayName; // Отображаемое имя (может содержать цветовые коды)
-    protected Enchantment.Rarity rarity; // ВНИМАНИЕ! Временно не используется, но указывать обязательно
-    
     // Методы для переопределения
+    
     public boolean isSupported(Item item); // Проверка совместимости с предметом
     
     // Обработчики событий
@@ -23,7 +22,6 @@ public class MyEnchantment extends CustomEnchantment {
     
     // Настройки зачарования
     public float getEnchantChance();    // Шанс получения (0.0-1.0)
-    public int getMinEnchantLevel();    // ВНИМАНИЕ! Не работает адекватно
     public int getMinLevel();          // Мин. уровень зачарования
     public int getMaxLevel();          // Макс. уровень зачарования
 }
@@ -117,79 +115,10 @@ Set<CustomEnchantment> all = EnchantmentAPI.getAllEnchantments();
 // Получение зачарований, совместимых с предметом
 Set<CustomEnchantment> forItem = EnchantmentAPI.getCompatibleEnchantments(item);
 ```
-
 ---
-
-## Примеры зачарований
-
-### 1. Зачарование "Ярость Вампира"
-
-```java
-public class VampireRageEnchantment extends CustomEnchantment {
-    public VampireRageEnchantment() {
-        this.id = "vampire_rage";
-        this.displayName = "§cЯрость Вампира";
-        this.rarity = Enchantment.Rarity.VERY_RARE;
-    }
-
-    @Override
-    public boolean isSupported(Item item) {
-        return item.isSword();
-    }
-
-    @Override
-    public boolean onHit(EntityDamageByEntityEvent event) {
-        Player player = (Player) event.getDamager();
-        float heal = event.getDamage() * 0.25f; // 25% от урона
-        player.setHealth(player.getHealth() + heal);
-        return true;
-    }
-
-    @Override
-    public int getMaxLevel() {
-        return 3;
-    }
-}
-```
-
-### 2. Зачарование "Землетрясение"
-
-```java
-public class EarthquakeEnchantment extends CustomEnchantment {
-    public EarthquakeEnchantment() {
-        this.id = "earthquake";
-        this.displayName = "§6Землетрясение";
-        this.rarity = Enchantment.Rarity.RARE;
-    }
-
-    @Override
-    public void onBlockBreak(Item tool, Block block, Player player, int level) {
-        if (Math.random() < 0.15 * level) {
-            Location loc = block.getLocation();
-            loc.getLevel().addSound(loc, Sound.RANDOM_EXPLODE);
-            
-            for (Entity entity : loc.getLevel().getNearbyEntities(
-                new SimpleAxisAlignedBB(loc.x-3, loc.y-1, loc.z-3, loc.x+3, loc.y+1, loc.z+3)
-            )) {
-                if (entity != player) {
-                    entity.setMotion(new Vector3(
-                        Math.random() - 0.5, 
-                        Math.random() * 0.5, 
-                        Math.random() - 0.5
-                    ));
-                }
-            }
-        }
-    }
-
-    @Override
-    public boolean isSupported(Item item) {
-        return item.isPickaxe() || item.isShovel();
-    }
-}
-```
-
----
-
 ### Примечание
-При создании кастомной книги, она будет автоматически зарегестрирована как кастомный предмет и временно не может использоваться для наковален, данный функционал в разработке и рекомендуется не использовать кастомные книги, а для выдачи зачарования можно использовать команду.
+В методе
+```java
+EnchantmentAPI.registerEnchantment(CustomEnchantment enchantment, boolean registerBook);
+```
+Использование `registerBook=true` нежелательно, книги временно не имеют никакого применения.
